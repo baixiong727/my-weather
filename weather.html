@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>白熊天气 - 智能天气预报</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --secondary: #7c3aed;
+            --accent: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg-primary: #f8fafc;
+            --bg-secondary: #f1f5f9;
+            --bg-card: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --border: #e2e8f0;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            min-height: 100vh;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            display: flex;
+        }
+
+        .left-panel {
+            flex: 1.2;
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            padding: 60px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .left-panel::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -30%;
+            width: 80%;
+            height: 150%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.15), transparent 60%);
+            pointer-events: none;
+        }
+
+        .left-panel::after {
+            content: '';
+            position: absolute;
+            bottom: -20%;
+            left: -20%;
+            width: 60%;
+            height: 80%;
+            background: radial-gradient(circle, rgba(6, 182, 212, 0.3), transparent 50%);
+            pointer-events: none;
+        }
+
+        .header-section {
+            position: relative;
+            z-index: 1;
+            margin-bottom: 40px;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 8px;
+        }
+
+        .bear-icon {
+            width: 44px;
+            height: 44px;
+            background: white;
+            border-radius: 50%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+            animation: bearBounce 2s ease-in-out infinite;
+        }
+
+        .bear-icon::before,
+        .bear-icon::after {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: white;
+            border-radius: 50%;
+            top: -6px;
+            box-shadow: inset 0 -2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .bear-icon::before {
+            left: 4px;
+        }
+
+        .bear-icon::after {
+            right: 4px;
+        }
+
+        .bear-face {
+            width: 24px;
+            height: 20px;
+            position: relative;
+        }
+
+        .bear-eye {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            background: #1e40af;
+            border-radius: 50%;
+            top: 4px;
+        }
+
+        .bear-eye.left {
+            left: 4px;
+        }
+
+        .bear-eye.right {
+            right: 4px;
+        }
+
+        .bear-nose {
+            position: absolute;
+            width: 6px;
+            height: 4px;
+            background: #1e40af;
+            border-radius: 50%;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .logo {
+            font-size: 32px;
+            font-weight: 800;
+            color: white;
+            letter-spacing: 2px;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        @keyframes bearBounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-5px);
+            }
+        }
+
+        .logo-subtitle {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-left: 60px;
+        }
+
+        .search-section {
+            position: relative;
+            z-index: 1;
+            margin-bottom: 40px;
+        }
+
+        .search-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .search-box {
+            flex: 1;
+            display: flex;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .search-box:focus-within {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        #cityInput {
+            flex: 1;
+            padding: 18px 24px;
+            border: none;
+            background: transparent;
+            font-size: 16px;
+            color: white;
+            outline: none;
+            font-weight: 500;
+        }
+
+        #cityInput::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        #searchBtn {
+            padding: 18px 36px;
+            background: white;
+            color: var(--primary);
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 0.5px;
+        }
+
+        #searchBtn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        #searchBtn:active {
+            transform: scale(0.98);
+        }
+
+        .location-btn {
+            padding: 18px 24px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(20px);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .location-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .location-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .weather-display {
+            flex: 1;
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .current-weather {
+            margin-bottom: 40px;
+        }
+
+        .location-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .location-icon {
+            width: 24px;
+            height: 24px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        #cityName {
+            font-size: 36px;
+            font-weight: 700;
+            color: white;
+            letter-spacing: -0.5px;
+        }
+
+        #updateTime {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 30px;
+            letter-spacing: 0.5px;
+        }
+
+        .temperature-row {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+            margin-bottom: 30px;
+        }
+
+        #weatherIcon {
+            width: 140px;
+            height: 140px;
+            filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.2));
+        }
+
+        #weatherIcon svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .temperature-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        #temperature {
+            font-size: 88px;
+            font-weight: 200;
+            color: white;
+            line-height: 1;
+            letter-spacing: -8px;
+        }
+
+        #temperature::after {
+            content: '°';
+            font-size: 44px;
+            font-weight: 300;
+            margin-left: 5px;
+        }
+
+        #weatherDesc {
+            font-size: 22px;
+            color: rgba(255, 255, 255, 0.9);
+            margin-top: 10px;
+            font-weight: 500;
+            letter-spacing: 2px;
+        }
+
+        .weather-details {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .detail-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .detail-card:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        .detail-icon {
+            width: 28px;
+            height: 28px;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 10px;
+        }
+
+        .detail-label {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 6px;
+        }
+
+        .detail-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: white;
+            letter-spacing: -0.5px;
+        }
+
+        .aqi-section {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin-bottom: 30px;
+        }
+
+        .aqi-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .aqi-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .aqi-title svg {
+            width: 24px;
+            height: 24px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .aqi-title span {
+            font-size: 16px;
+            font-weight: 700;
+            color: white;
+            letter-spacing: 0.5px;
+        }
+
+        .aqi-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .aqi-badge.excellent {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+
+        .aqi-badge.good {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: white;
+        }
+
+        .aqi-badge.moderate {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+        }
+
+        .aqi-badge.unhealthy {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        .aqi-badge.hazardous {
+            background: linear-gradient(135deg, #7c3aed, #6d28d9);
+            color: white;
+        }
+
+        .aqi-pollutants {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        .pollutant-item {
+            text-align: center;
+        }
+
+        .pollutant-label {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+
+        .pollutant-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .hourly-section {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .hourly-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .hourly-header svg {
+            width: 24px;
+            height: 24px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .hourly-header span {
+            font-size: 16px;
+            font-weight: 700;
+            color: white;
+            letter-spacing: 0.5px;
+        }
+
+        .hourly-scroll {
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+
+        .hourly-scroll::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .hourly-scroll::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        .hourly-scroll::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+
+        .hourly-item {
+            flex-shrink: 0;
+            width: 80px;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .hourly-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-4px);
+        }
+
+        .hourly-time {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .hourly-icon {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 10px;
+        }
+
+        .hourly-icon svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .hourly-temp {
+            font-size: 16px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .right-panel {
+            flex: 0.8;
+            min-height: 100vh;
+            background: var(--bg-card);
+            padding: 60px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .forecast-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .forecast-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.5px;
+        }
+
+        .forecast-subtitle {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-top: 6px;
+            font-weight: 500;
+        }
+
+        .forecast-refresh {
+            width: 24px;
+            height: 24px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .forecast-refresh:hover {
+            color: var(--primary);
+            transform: rotate(180deg);
+        }
+
+        #forecastList {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+
+        .forecast-item {
+            display: grid;
+            grid-template-columns: 100px 1fr 100px;
+            align-items: center;
+            gap: 24px;
+            padding: 24px;
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+
+        .forecast-item:hover {
+            background: white;
+            transform: translateX(8px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--primary);
+        }
+
+        .forecast-date {
+            font-size: 15px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .forecast-weather {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .forecast-icon {
+            width: 48px;
+            height: 48px;
+        }
+
+        .forecast-icon svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .forecast-condition {
+            font-size: 15px;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .forecast-temp {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-align: right;
+        }
+
+        .forecast-temp span {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .lifestyle-section {
+            margin-top: auto;
+        }
+
+        .lifestyle-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .lifestyle-header svg {
+            width: 24px;
+            height: 24px;
+            color: var(--text-primary);
+        }
+
+        .lifestyle-header span {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .lifestyle-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .lifestyle-item {
+            padding: 20px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .lifestyle-item:hover {
+            background: white;
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .lifestyle-icon {
+            width: 36px;
+            height: 36px;
+            margin: 0 auto 12px;
+            color: var(--primary);
+        }
+
+        .lifestyle-name {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .lifestyle-value {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .loading-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fadeInRight {
+            from {
+                opacity: 0;
+                transform: translateX(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .left-panel {
+            animation: fadeInLeft 0.6s ease-out;
+        }
+
+        .right-panel {
+            animation: fadeInRight 0.6s ease-out;
+        }
+
+        .detail-card,
+        .aqi-section,
+        .hourly-section {
+            animation: fadeInUp 0.5s ease-out backwards;
+        }
+
+        .detail-card { animation-delay: 0.2s; }
+        .aqi-section { animation-delay: 0.3s; }
+        .hourly-section { animation-delay: 0.4s; }
+
+        .forecast-item {
+            animation: fadeInUp 0.4s ease-out backwards;
+        }
+
+        .forecast-item:nth-child(1) { animation-delay: 0.1s; }
+        .forecast-item:nth-child(2) { animation-delay: 0.15s; }
+        .forecast-item:nth-child(3) { animation-delay: 0.2s; }
+        .forecast-item:nth-child(4) { animation-delay: 0.25s; }
+        .forecast-item:nth-child(5) { animation-delay: 0.3s; }
+        .forecast-item:nth-child(6) { animation-delay: 0.35s; }
+        .forecast-item:nth-child(7) { animation-delay: 0.4s; }
+
+        @media (max-width: 1024px) {
+            body {
+                flex-direction: column;
+            }
+
+            .left-panel {
+                min-height: auto;
+                padding: 40px;
+            }
+
+            .right-panel {
+                min-height: auto;
+                padding: 40px;
+            }
+
+            .temperature-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 20px;
+            }
+
+            #weatherIcon {
+                width: 120px;
+                height: 120px;
+            }
+
+            #temperature {
+                font-size: 72px;
+            }
+
+            .weather-details {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .aqi-pollutants {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .lifestyle-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .left-panel {
+                padding: 30px;
+            }
+
+            .right-panel {
+                padding: 30px;
+            }
+
+            .logo {
+                font-size: 24px;
+            }
+
+            #cityName {
+                font-size: 28px;
+            }
+
+            .forecast-item {
+                grid-template-columns: 80px 1fr 80px;
+                gap: 16px;
+                padding: 20px;
+            }
+
+            .search-controls {
+                flex-direction: column;
+            }
+
+            .search-box {
+                width: 100%;
+            }
+
+            .location-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <div class="left-panel">
+        <div class="header-section">
+            <div class="logo-container">
+                <div class="bear-icon">
+                    <div class="bear-face">
+                        <div class="bear-eye left"></div>
+                        <div class="bear-eye right"></div>
+                        <div class="bear-nose"></div>
+                    </div>
+                </div>
+                <div class="logo">白熊天气</div>
+            </div>
+            <div class="logo-subtitle">智能天气预报系统</div>
+        </div>
+
+        <div class="search-section">
+            <div class="search-controls">
+                <div class="search-box">
+                    <input type="text" id="cityInput" placeholder="输入城市名称搜索天气..." />
+                    <button id="searchBtn">搜索</button>
+                </div>
+                <button class="location-btn" id="locationBtn" title="获取当前位置">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <circle cx="12" cy="12" r="3"/>
+                        <line x1="12" y1="2" x2="12" y2="4"/>
+                        <line x1="12" y1="20" x2="12" y2="22"/>
+                        <line x1="2" y1="12" x2="4" y2="12"/>
+                        <line x1="20" y1="12" x2="22" y2="12"/>
+                    </svg>
+                    定位
+                </button>
+            </div>
+        </div>
+
+        <div class="weather-display">
+            <div class="current-weather">
+                <div class="location-row">
+                    <svg class="location-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                        <circle cx="12" cy="10" r="3"/>
+                    </svg>
+                    <div id="cityName">北京</div>
+                </div>
+                <div id="updateTime">更新时间: --</div>
+
+                <div class="temperature-row">
+                    <div id="weatherIcon"></div>
+                    <div class="temperature-info">
+                        <div id="temperature">--</div>
+                        <div id="weatherDesc">--</div>
+                    </div>
+                </div>
+
+                <div class="weather-details">
+                    <div class="detail-card">
+                        <svg class="detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0z"/>
+                        </svg>
+                        <div class="detail-label">湿度</div>
+                        <div class="detail-value" id="humidity">--%</div>
+                    </div>
+                    <div class="detail-card">
+                        <svg class="detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/>
+                            <path d="M9.6 4.6A2 2 0 1 1 11 8H2"/>
+                            <path d="M12.6 19.4A2 2 0 1 0 14 16H2"/>
+                        </svg>
+                        <div class="detail-label">风向</div>
+                        <div class="detail-value" id="windDirection">--</div>
+                    </div>
+                    <div class="detail-card">
+                        <svg class="detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/>
+                        </svg>
+                        <div class="detail-label">风力</div>
+                        <div class="detail-value" id="windPower">--级</div>
+                    </div>
+                    <div class="detail-card">
+                        <svg class="detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2v20M2 12h20M12 2a10 10 0 0 1 0 20M12 2a10 10 0 0 0 0 20"/>
+                        </svg>
+                        <div class="detail-label">气压</div>
+                        <div class="detail-value" id="pressure">--hPa</div>
+                    </div>
+                </div>
+
+                <div class="aqi-section">
+                    <div class="aqi-header">
+                        <div class="aqi-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707"/>
+                            </svg>
+                            <span>空气质量</span>
+                        </div>
+                        <div class="aqi-badge excellent" id="aqiBadge">--</div>
+                    </div>
+                    <div class="aqi-pollutants">
+                        <div class="pollutant-item">
+                            <div class="pollutant-label">PM2.5</div>
+                            <div class="pollutant-value" id="pm25">--</div>
+                        </div>
+                        <div class="pollutant-item">
+                            <div class="pollutant-label">PM10</div>
+                            <div class="pollutant-value" id="pm10">--</div>
+                        </div>
+                        <div class="pollutant-item">
+                            <div class="pollutant-label">O₃</div>
+                            <div class="pollutant-value" id="o3">--</div>
+                        </div>
+                        <div class="pollutant-item">
+                            <div class="pollutant-label">NO₂</div>
+                            <div class="pollutant-value" id="no2">--</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hourly-section">
+                    <div class="hourly-header">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                        <span>逐小时预报</span>
+                    </div>
+                    <div class="hourly-scroll" id="hourlyList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="right-panel">
+        <div class="forecast-header">
+            <div>
+                <div class="forecast-title">未来7天预报</div>
+                <div class="forecast-subtitle">Weather Forecast</div>
+            </div>
+            <svg class="forecast-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 4 23 10 17 10"/>
+                <polyline points="1 20 1 14 7 14"/>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+        </div>
+        <div id="forecastList"></div>
+
+        <div class="lifestyle-section">
+            <div class="lifestyle-header">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+                <span>生活指数</span>
+            </div>
+            <div class="lifestyle-grid">
+                <div class="lifestyle-item">
+                    <svg class="lifestyle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20.38 3.46L16 2 12 5.5 8 2 3.62 3.46 2 6.1l3 3.02v5.83c0 4.46 3.84 8.4 8 9.4 4.16-1 8-4.94 8-9.4V9.12l3-3.02L20.38 3.46z"/>
+                    </svg>
+                    <div class="lifestyle-name">穿衣指数</div>
+                    <div class="lifestyle-value" id="dressing">--</div>
+                </div>
+                <div class="lifestyle-item">
+                    <svg class="lifestyle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2v20M2 12h20"/>
+                    </svg>
+                    <div class="lifestyle-name">紫外线</div>
+                    <div class="lifestyle-value" id="uvIndex">--</div>
+                </div>
+                <div class="lifestyle-item">
+                    <svg class="lifestyle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707"/>
+                    </svg>
+                    <div class="lifestyle-name">舒适度</div>
+                    <div class="lifestyle-value" id="comfort">--</div>
+                </div>
+                <div class="lifestyle-item">
+                    <svg class="lifestyle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 4v16h16"/>
+                        <path d="M4 20l4-4 4 4 4-8 4 4"/>
+                    </svg>
+                    <div class="lifestyle-name">洗车指数</div>
+                    <div class="lifestyle-value" id="carWash">--</div>
+                </div>
+                <div class="lifestyle-item">
+                    <svg class="lifestyle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M8 12l2 2 4-4"/>
+                    </svg>
+                    <div class="lifestyle-name">过敏指数</div>
+                    <div class="lifestyle-value" id="allergy">--</div>
+                </div>
+                <div class="lifestyle-item">
+                    <svg class="lifestyle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                    <div class="lifestyle-name">睡眠指数</div>
+                    <div class="lifestyle-value" id="sleep">--</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="cities_data.js"></script>
+    <script src="weather.js"></script>
+</body>
+</html>
